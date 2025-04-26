@@ -39,6 +39,17 @@ export async function createNoteAction(formData: NoteFormValues) {
     return { success: true };
   } catch (err: any) {
     console.error("Create note error:", err.message);
+
+    // --- Check for duplicate key error (E11000) ---
+    if (err.code === 11000) {
+      // MongoDB duplicate key error
+      // You might want to parse the error message to be more specific
+      // about WHICH key was duplicated, but for a single unique field,
+      // a generic message is often fine.
+      console.error("Duplicate title error");
+      throw new Error("A note with this title already exists.");
+    }
+
     throw new Error(err.message || "Failed to create note");
   }
 }
