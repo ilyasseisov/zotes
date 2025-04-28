@@ -9,8 +9,9 @@ import { createNoteAction } from "@/lib/actions/note.actions";
 import { updateNoteAction } from "@/lib/actions/note.actions";
 import { useToast } from "@/hooks/use-toast";
 import NoteForm from "@/components/note-form";
-import Link from "next/link";
 import ROUTES from "@/constants/routes";
+import { Button } from "@/components/ui/button";
+import Link from "next/link";
 
 const Page = () => {
   // data fetching
@@ -117,13 +118,19 @@ const Page = () => {
     : handleCreateNote;
   const currentButtonTitle = createdNoteId ? "Update" : "Save";
   const pageTitle = createdNoteId ? "Update note" : "New note";
+  // --- Determine the text for the header button/link ---
+  const headerButtonText = createdNoteId ? "Back to all notes" : "Cancel";
   // return
   return (
     <>
       <main className="container mx-auto max-w-4xl px-4 py-8">
         <header className="mb-8 flex items-center justify-between">
           <h1 className="mb-6 text-3xl font-bold">{pageTitle}</h1>
-          <Link href={ROUTES.HOME}>Back to all notes</Link>
+          {/* Conditionally render Cancel button or Back link */}
+
+          <Button asChild type="button" variant="ghost">
+            <Link href={ROUTES.HOME}>{headerButtonText}</Link>
+          </Button>
         </header>
         <NoteForm
           // Pass the note ID if available (for update mode)
