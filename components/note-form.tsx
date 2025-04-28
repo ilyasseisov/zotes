@@ -1,6 +1,6 @@
 "use client";
 
-import { useForm } from "react-hook-form";
+import { useForm, useFormState } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { NoteSchema } from "@/lib/validations";
@@ -47,7 +47,18 @@ const NoteForm = ({
       title: title ?? "",
       content: content ?? "",
     },
+    // Add mode: 'onChange' or 'onBlur' to trigger validation as the user types/interacts
+    // 'onChange' is generally more responsive for showing/hiding based on validity
+    mode: "onChange",
   });
+  // --- Use useFormState to get form state properties ---
+  const { isValid, isDirty } = useFormState({
+    control: form.control, // Pass the form's control object
+  });
+  // --- Determine if the footer/button should be visible ---
+  // In create mode (no id), show if the form is valid.
+  // In update mode (has id), show if the form is valid AND has been changed (isDirty).
+  const shouldShowFooter = id ? isValid && isDirty : isValid;
   // local variables
   // functions
   // return
@@ -100,11 +111,11 @@ const NoteForm = ({
                 )}
               />
             </CardContent>
-            <CardFooter className="flex justify-end gap-2">
-              {/* Conditionally render the Cancel button */}
-
-              <Button>{btnTitle ?? "Save"}</Button>
-            </CardFooter>
+            {shouldShowFooter && (
+              <CardFooter className="flex justify-end gap-2">
+                <Button type="submit">{btnTitle ?? "Save"}</Button>
+              </CardFooter>
+            )}
           </form>
         </Form>
       </Card>
