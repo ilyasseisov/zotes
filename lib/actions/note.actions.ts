@@ -36,7 +36,7 @@ export async function createNoteAction(formData: NoteFormValues) {
     // Revalidate the cache for the notes page
     revalidatePath("/");
 
-    return { success: true };
+    return { success: true, noteId: note._id.toString() };
   } catch (err: any) {
     console.error("Create note error:", err.message);
 
