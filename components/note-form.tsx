@@ -32,6 +32,7 @@ interface NoteFormProps {
   content?: string;
   btnTitle?: string;
   onSubmit: (values: z.infer<typeof NoteSchema>) => void;
+  showCancelButton?: boolean;
 }
 
 const NoteForm = ({
@@ -40,6 +41,7 @@ const NoteForm = ({
   content,
   btnTitle,
   onSubmit,
+  showCancelButton = true,
 }: NoteFormProps) => {
   // hooks
   const router = useRouter();
@@ -104,13 +106,16 @@ const NoteForm = ({
               />
             </CardContent>
             <CardFooter className="flex justify-end gap-2">
-              <Button
-                type="button"
-                variant="outline"
-                onClick={() => router.push(ROUTES.HOME)}
-              >
-                Cancel
-              </Button>
+              {/* Conditionally render the Cancel button */}
+              {showCancelButton && (
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => router.push(ROUTES.HOME)}
+                >
+                  Cancel
+                </Button>
+              )}
               <Button>{btnTitle ?? "Save"}</Button>
             </CardFooter>
           </form>
