@@ -9,9 +9,13 @@ import { NoteFormValues } from "./../validations";
 
 // C w/Zod
 export async function createNoteAction(formData: NoteFormValues) {
-  // make sure we're connected to the database
-  // before doing anything!
-  await dbConnect();
+  // Try connecting to the database first
+  const dbResult = await dbConnect();
+
+  if (!dbResult.success) {
+    console.error("Database connection error:", dbResult.error);
+    throw new Error(dbResult.error?.message || "Failed to connect to database");
+  }
 
   const validationResult = NoteSchema.safeParse(formData);
 
@@ -56,9 +60,18 @@ export async function createNoteAction(formData: NoteFormValues) {
 
 // R - all
 export async function getAllNotesAction() {
-  // make sure we're connected to the database
-  // before doing anything!
-  await dbConnect();
+  // Try connecting to the database first
+  const dbResult = await dbConnect();
+
+  if (!dbResult.success) {
+    console.error("Database connection error:", dbResult.error);
+    // Return the database error to be handled by the UI
+    return {
+      error: true,
+      message: dbResult.error?.message || "Failed to connect to database",
+      code: dbResult.error?.code || "DB_CONNECTION_ERROR",
+    };
+  }
 
   try {
     // Fetch all notes and sort by newest first
@@ -72,7 +85,11 @@ export async function getAllNotesAction() {
     return notes;
   } catch (error: any) {
     console.error("Failed to fetch notes:", error.message);
-    throw new Error("Failed to fetch notes");
+    return {
+      error: true,
+      message: error.message || "Failed to fetch notes",
+      code: error.code || "FETCH_ERROR",
+    };
   }
 }
 
@@ -81,18 +98,35 @@ export async function getSingleNoteAction(id: string) {
   try {
     // Validate the ID format
     if (!mongoose.Types.ObjectId.isValid(id)) {
-      throw new Error("Invalid note ID format");
+      return {
+        error: true,
+        message: "Invalid note ID format",
+        code: "INVALID_ID",
+      };
     }
 
-    // Connect to the database
-    await dbConnect();
+    // Try connecting to the database first
+    const dbResult = await dbConnect();
+
+    if (!dbResult.success) {
+      console.error("Database connection error:", dbResult.error);
+      return {
+        error: true,
+        message: dbResult.error?.message || "Failed to connect to database",
+        code: dbResult.error?.code || "DB_CONNECTION_ERROR",
+      };
+    }
 
     // Find the note by ID
     const noteDoc = await NoteModel.findById(id).lean();
 
     // If no note was found, return null
     if (!noteDoc) {
-      return null;
+      return {
+        error: true,
+        message: "Note not found",
+        code: "NOT_FOUND",
+      };
     }
 
     // Convert to plain JavaScript object
@@ -102,19 +136,27 @@ export async function getSingleNoteAction(id: string) {
     return note;
   } catch (err: any) {
     console.error(`Failed to fetch note with ID ${id}:`, err.message);
-    throw new Error(`Failed to fetch note: ${err.message}`);
+    return {
+      error: true,
+      message: `Failed to fetch note: ${err.message}`,
+      code: err.code || "FETCH_ERROR",
+    };
   }
 }
 
 // U
 export async function updateNoteAction(id: string, formData: NoteFormValues) {
-  // make sure we're connected to the database
-  // before doing anything!
-  await dbConnect();
-
   // Validate the ID format
   if (!mongoose.Types.ObjectId.isValid(id)) {
     throw new Error("Invalid note ID format");
+  }
+
+  // Try connecting to the database first
+  const dbResult = await dbConnect();
+
+  if (!dbResult.success) {
+    console.error("Database connection error:", dbResult.error);
+    throw new Error(dbResult.error?.message || "Failed to connect to database");
   }
 
   // Validate the form data
@@ -165,13 +207,17 @@ export async function updateNoteAction(id: string, formData: NoteFormValues) {
 
 // D
 export async function deleteNoteAction(id: string) {
-  // make sure we're connected to the database
-  // before doing anything!
-  await dbConnect();
-
   // Validate the ID format
   if (!mongoose.Types.ObjectId.isValid(id)) {
     throw new Error("Invalid note ID format");
+  }
+
+  // Try connecting to the database first
+  const dbResult = await dbConnect();
+
+  if (!dbResult.success) {
+    console.error("Database connection error:", dbResult.error);
+    throw new Error(dbResult.error?.message || "Failed to connect to database");
   }
 
   try {

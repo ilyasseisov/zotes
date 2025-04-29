@@ -1,22 +1,19 @@
 import mongoose, { Mongoose } from "mongoose";
-// import logger from "./logger";
 
-const MONGODB_URI = process.env.MONGODB_URI as string;
-
-if (!MONGODB_URI) {
-  // This error occurs during server initialization/rendering.
-  // It cannot be caught by client-side toast handlers.
-  // The application will fail to build or render pages that require DB access.
-  console.error(
-    "FATAL ERROR: MONGODB_URI is not defined in environment variables.",
-  );
-  // Throw a standard Error object
-  throw new Error("FATAL ERROR: MONGODB_URI is not defined.");
-}
+const MONGODB_URI = process.env.MONGODB_URI;
 
 interface MongooseCache {
   conn: Mongoose | null;
   promise: Promise<Mongoose> | null;
+}
+
+interface DbConnectionResult {
+  success: boolean;
+  conn?: Mongoose;
+  error?: {
+    message: string;
+    code: string;
+  };
 }
 
 declare global {
@@ -30,11 +27,25 @@ if (!cached) {
   cached = global.mongoose = { conn: null, promise: null };
 }
 
-const dbConnect = async (): Promise<Mongoose> => {
+const dbConnect = async (): Promise<DbConnectionResult> => {
   if (cached.conn) {
-    // logger.info("Using existing database connection");
     console.log("Using existing database connection");
-    return cached.conn;
+    return { success: true, conn: cached.conn };
+  }
+
+  // Check if MONGODB_URI is defined
+  if (!MONGODB_URI) {
+    console.error(
+      "DATABASE ERROR: MONGODB_URI is not defined in environment variables.",
+    );
+    return {
+      success: false,
+      error: {
+        message:
+          "Database connection string is missing. Please check your environment configuration.",
+        code: "DB_URI_MISSING",
+      },
+    };
   }
 
   if (!cached.promise) {
@@ -49,13 +60,31 @@ const dbConnect = async (): Promise<Mongoose> => {
       .catch((error) => {
         console.log("Error connecting to MongoDB", error);
         cached.promise = null;
-        throw error;
+
+        // Return more specific error information based on error type
+        const errorMessage =
+          error.message || "Unknown database connection error";
+        const errorCode = error.code || "DB_CONNECTION_ERROR";
+
+        throw {
+          message: errorMessage,
+          code: errorCode,
+        };
       });
   }
 
-  cached.conn = await cached.promise;
-
-  return cached.conn;
+  try {
+    cached.conn = await cached.promise;
+    return { success: true, conn: cached.conn };
+  } catch (error: any) {
+    return {
+      success: false,
+      error: {
+        message: error.message || "Failed to connect to database",
+        code: error.code || "DB_CONNECTION_ERROR",
+      },
+    };
+  }
 };
 
 export default dbConnect;

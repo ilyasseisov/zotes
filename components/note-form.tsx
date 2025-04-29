@@ -142,9 +142,8 @@ const NoteForm = ({
                   {/* Conditionally render content based on loading state */}
                   {isLoading ? (
                     <>
-                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />{" "}
+                      <Loader2 className="h-4 w-4 animate-spin" />
                       {/* Spinner icon */}
-                      In progress...
                     </>
                   ) : (
                     (btnTitle ?? "Save") // Show normal text when not loading
