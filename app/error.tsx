@@ -10,7 +10,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { AlertCircle, Home, RefreshCw } from "lucide-react";
+import { AlertCircle } from "lucide-react";
 import Link from "next/link";
 
 export default function Error({
@@ -31,7 +31,8 @@ export default function Error({
   const isDbError =
     errorMessage.includes("MONGODB_URI") ||
     errorMessage.includes("database") ||
-    errorMessage.includes("Database");
+    errorMessage.includes("Database") ||
+    errorMessage.includes("connection string");
 
   return (
     <div className="container mx-auto flex min-h-screen max-w-md items-center justify-center px-4 py-16">
@@ -50,18 +51,16 @@ export default function Error({
         <CardContent>
           <p className="text-sm text-muted-foreground">
             {isDbError
-              ? "The application is unable to connect to the database. This could be due to missing environment variables or a temporary connection issue."
+              ? "The application is unable to connect to the database. Please check your MONGODB_URI environment variable."
               : errorMessage}
           </p>
         </CardContent>
         <CardFooter className="flex flex-wrap gap-2">
-          <Button onClick={reset} className="gap-2">
-            <RefreshCw className="h-4 w-4" /> Try Again
+          <Button onClick={() => reset()} className="gap-2">
+            Try Again
           </Button>
           <Button variant="outline" asChild>
-            <Link href="/" className="gap-2">
-              <Home className="h-4 w-4" /> Go Home
-            </Link>
+            <Link href="/">Go Home</Link>
           </Button>
         </CardFooter>
       </Card>

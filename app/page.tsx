@@ -13,7 +13,7 @@ import {
 
 import DeleteNoteButton from "@/components/delete-note-button";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { AlertCircle, RefreshCw } from "lucide-react";
+import { AlertCircle } from "lucide-react";
 
 export default async function Home() {
   // vars
@@ -30,15 +30,20 @@ export default async function Home() {
         message: result.message || "An error occurred while fetching notes",
         code: result.code,
       };
+      // When there's a database error, throw it to be caught by error boundary
+      if (
+        result.code === "DB_URI_MISSING" ||
+        result.code === "DB_CONNECTION_ERROR"
+      ) {
+        throw new Error(result.message || "Database connection error");
+      }
     } else {
       notes = result;
     }
   } catch (err: any) {
     console.error("Error fetching notes:", err);
-    error = {
-      message: err.message || "An error occurred while fetching notes",
-      code: "UNKNOWN_ERROR",
-    };
+    // Rethrow the error to be caught by the error boundary
+    throw err;
   }
 
   const getErrorMessage = (code?: string) => {
@@ -70,21 +75,13 @@ export default async function Home() {
         </div>
 
         <section>
-          {error ? (
+          {error &&
+          error.code !== "DB_URI_MISSING" &&
+          error.code !== "DB_CONNECTION_ERROR" ? (
             <Alert variant="destructive" className="mb-6">
               <AlertCircle className="h-4 w-4" />
               <AlertTitle>Error</AlertTitle>
               <AlertDescription>{getErrorMessage(error.code)}</AlertDescription>
-              <CardFooter className="px-0 pt-6">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  className="gap-2"
-                  onClick={() => window.location.reload()}
-                >
-                  <RefreshCw className="h-4 w-4" /> Try Again
-                </Button>
-              </CardFooter>
             </Alert>
           ) : notes.length === 0 ? (
             <Card>
