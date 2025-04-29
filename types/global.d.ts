@@ -1,6 +1,7 @@
-// interface Post {
-//   slug: string;
-//   title: string;
-//   date: string;
-//   content: string;
-// }
+interface Note {
+  _id: string;
+  title: string;
+  content: string;
+  createdAt: Date;
+  updatedAt: Date;
+}

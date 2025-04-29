@@ -8,10 +8,16 @@ const Page = async ({ params }: { params: { id: string } }) => {
   // data fetching
   const { id } = await params;
   // Fetch note when the page loads
-  const note = await getSingleNoteAction(id);
-  // _id
-  // title
-  // content
+  let note: Note;
+  try {
+    note = await getSingleNoteAction(id);
+    // _id
+    // title
+    // content
+  } catch (error) {
+    console.error("Error fetching note:", error);
+    throw new Error("Error fetching note");
+  }
 
   // hooks
   // local variables

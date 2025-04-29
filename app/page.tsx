@@ -12,9 +12,16 @@ import {
 import DeleteNoteButton from "@/components/delete-note-button";
 
 export default async function Home() {
+  // vars
+  let notes: Note[] = [];
   // data fetching
   // Fetch all notes when the page loads
-  const notes = await getAllNotesAction();
+  try {
+    notes = await getAllNotesAction();
+  } catch (error) {
+    console.error("Error fetching notes:", error);
+    throw new Error("Error fetching notes");
+  }
 
   // return
   return (

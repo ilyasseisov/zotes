@@ -4,7 +4,14 @@ import mongoose, { Mongoose } from "mongoose";
 const MONGODB_URI = process.env.MONGODB_URI as string;
 
 if (!MONGODB_URI) {
-  throw new Error("MONGODB_URI is not defined");
+  // This error occurs during server initialization/rendering.
+  // It cannot be caught by client-side toast handlers.
+  // The application will fail to build or render pages that require DB access.
+  console.error(
+    "FATAL ERROR: MONGODB_URI is not defined in environment variables.",
+  );
+  // Throw a standard Error object
+  throw new Error("FATAL ERROR: MONGODB_URI is not defined.");
 }
 
 interface MongooseCache {
@@ -41,6 +48,7 @@ const dbConnect = async (): Promise<Mongoose> => {
       })
       .catch((error) => {
         console.log("Error connecting to MongoDB", error);
+        cached.promise = null;
         throw error;
       });
   }
