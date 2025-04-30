@@ -1,8 +1,7 @@
-3. optimistic updates
+2. add AI
+3. revamp loading and error screens
 
 ---
 
-autosave?
 logo?
 font?
-colors?
