@@ -2,18 +2,11 @@ import { Button } from "@/components/ui/button";
 import ROUTES from "@/constants/routes";
 import Link from "next/link";
 import { getAllNotesAction } from "@/lib/actions/note.actions";
-import {
-  Card,
-  CardHeader,
-  CardTitle,
-  CardDescription,
-  CardFooter,
-  CardContent,
-} from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 
-import DeleteNoteButton from "@/components/delete-note-button";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { AlertCircle } from "lucide-react";
+import NotesListFilter from "@/components/notes-list-filter";
 
 export default async function Home() {
   // vars
@@ -92,28 +85,7 @@ export default async function Home() {
               </CardContent>
             </Card>
           ) : (
-            <ul className="grid grid-cols-12 gap-4">
-              {notes.map((note) => (
-                <li
-                  className="col-span-12 sm:col-span-6 md:col-span-4"
-                  key={note._id}
-                >
-                  <Card>
-                    <Link href={ROUTES.SINGLE_NOTE(note._id)}>
-                      <CardHeader>
-                        <CardTitle>{note.title}</CardTitle>
-                        <CardDescription>
-                          {note.content.slice(0, 28) + "..."}
-                        </CardDescription>
-                      </CardHeader>
-                    </Link>
-                    <CardFooter className="flex justify-end">
-                      <DeleteNoteButton noteId={note._id} />
-                    </CardFooter>
-                  </Card>
-                </li>
-              ))}
-            </ul>
+            <NotesListFilter notes={notes} />
           )}
         </section>
       </main>
