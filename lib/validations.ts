@@ -11,6 +11,7 @@ export const NoteSchema = z.object({
     .string()
     .nonempty("Content is required")
     .min(10, "Content must be at least 10 characters"),
+  userId: z.string().nonempty("userId is required"),
 });
 
 export type NoteFormValues = z.infer<typeof NoteSchema>;

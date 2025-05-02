@@ -6,6 +6,7 @@ interface Note {
   content: string;
   createdAt: Date;
   updatedAt: Date;
+  userId: string;
 }
 
 // create the schema
@@ -27,6 +28,10 @@ const NoteSchema = new Schema({
   updatedAt: {
     type: Date,
     default: Date.now,
+  },
+  userId: {
+    type: String,
+    required: true,
   },
 });
 // return mongoose's model if it exists
