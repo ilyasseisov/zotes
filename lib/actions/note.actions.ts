@@ -6,9 +6,27 @@ import dbConnect from "../db";
 import NoteModel from "../models/note";
 import { NoteSchema } from "../validations";
 import { NoteFormValues } from "./../validations";
+import { currentUser } from "@clerk/nextjs/server";
 
 // C w/Zod
 export async function createNoteAction(formData: NoteFormValues) {
+  // Get the current user object
+  const user = await currentUser();
+
+  if (!user || !user.id) {
+    throw new Error("Authentication required");
+  }
+
+  const userId = user.id;
+
+  // Log for debugging
+  console.log("Auth userId:", userId);
+
+  // Check if user is authenticated
+  if (!userId) {
+    throw new Error("Authentication required");
+  }
+
   // Try connecting to the database first
   const dbResult = await dbConnect();
 
@@ -31,6 +49,7 @@ export async function createNoteAction(formData: NoteFormValues) {
     const note = await NoteModel.create({
       title,
       content,
+      userId, // Store the authenticated user's ID
       createdAt: new Date(),
       updatedAt: new Date(),
     });
@@ -60,6 +79,18 @@ export async function createNoteAction(formData: NoteFormValues) {
 
 // R - all
 export async function getAllNotesAction() {
+  // Get the current user
+  const user = await currentUser();
+
+  if (!user || !user.id) {
+    return {
+      error: true,
+      message: "Authentication required",
+      code: "UNAUTHORIZED",
+    };
+  }
+
+  const userId = user.id;
   // Try connecting to the database first
   const dbResult = await dbConnect();
 
@@ -74,8 +105,10 @@ export async function getAllNotesAction() {
   }
 
   try {
-    // Fetch all notes and sort by newest first
-    const noteDocs = await NoteModel.find({}).sort({ createdAt: -1 }).lean();
+    // Fetch all notes that belong to the current user and sort by newest first
+    const noteDocs = await NoteModel.find({ userId })
+      .sort({ createdAt: -1 })
+      .lean();
 
     // Convert MongoDB documents to plain JavaScript objects
     // with serializable properties using JSON serialization
@@ -96,6 +129,18 @@ export async function getAllNotesAction() {
 // R - single
 export async function getSingleNoteAction(id: string) {
   try {
+    // Get the current user
+    const user = await currentUser();
+
+    if (!user || !user.id) {
+      return {
+        error: true,
+        message: "Authentication required",
+        code: "UNAUTHORIZED",
+      };
+    }
+
+    const userId = user.id;
     // Validate the ID format
     if (!mongoose.Types.ObjectId.isValid(id)) {
       return {
@@ -117,8 +162,8 @@ export async function getSingleNoteAction(id: string) {
       };
     }
 
-    // Find the note by ID
-    const noteDoc = await NoteModel.findById(id).lean();
+    // Find the note by ID and userId to ensure the user owns the note
+    const noteDoc = await NoteModel.findOne({ _id: id, userId }).lean();
 
     // If no note was found, return null
     if (!noteDoc) {
@@ -146,6 +191,14 @@ export async function getSingleNoteAction(id: string) {
 
 // U
 export async function updateNoteAction(id: string, formData: NoteFormValues) {
+  // Get the current user
+  const user = await currentUser();
+
+  if (!user || !user.id) {
+    throw new Error("Authentication required");
+  }
+
+  const userId = user.id;
   // Validate the ID format
   if (!mongoose.Types.ObjectId.isValid(id)) {
     throw new Error("Invalid note ID format");
@@ -169,6 +222,13 @@ export async function updateNoteAction(id: string, formData: NoteFormValues) {
 
   const { title, content } = validationResult.data;
   try {
+    // First check if the note belongs to this user
+    const existingNote = await NoteModel.findOne({ _id: id, userId });
+
+    if (!existingNote) {
+      throw new Error("Note not found or you don't have permission to edit it");
+    }
+
     // Find and update the note
     const updatedNote = await NoteModel.findByIdAndUpdate(
       id,
@@ -207,6 +267,15 @@ export async function updateNoteAction(id: string, formData: NoteFormValues) {
 
 // D
 export async function deleteNoteAction(id: string) {
+  // Get the current user
+  const user = await currentUser();
+
+  if (!user || !user.id) {
+    throw new Error("Authentication required");
+  }
+
+  const userId = user.id;
+
   // Validate the ID format
   if (!mongoose.Types.ObjectId.isValid(id)) {
     throw new Error("Invalid note ID format");
@@ -221,8 +290,11 @@ export async function deleteNoteAction(id: string) {
   }
 
   try {
-    // Find and delete the note by ID
-    const deletedNote = await NoteModel.findByIdAndDelete(id).lean();
+    // Find and delete the note by ID and userId to ensure the user owns the note
+    const deletedNote = await NoteModel.findOneAndDelete({
+      _id: id,
+      userId,
+    }).lean();
 
     // If no note was found with the given ID
     if (!deletedNote) {
