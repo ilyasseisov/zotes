@@ -129,7 +129,7 @@ const Page = () => {
           {/* Conditionally render Cancel button or Back link */}
 
           <Button asChild type="button" variant="ghost">
-            <Link href={ROUTES.HOME}>{headerButtonText}</Link>
+            <Link href={ROUTES.APP}>{headerButtonText}</Link>
           </Button>
         </header>
         <NoteForm

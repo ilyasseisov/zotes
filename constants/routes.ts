@@ -1,7 +1,7 @@
 const ROUTES = {
-  HOME: "/notes",
-  NEW_NOTE: "/new-note",
-  SINGLE_NOTE: (id: string) => `/note/${id}`,
+  APP: "/notes",
+  NEW_NOTE: "/notes/new-note",
+  SINGLE_NOTE: (id: string) => `/notes/note/${id}`,
 };
 
 export default ROUTES;

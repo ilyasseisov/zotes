@@ -30,7 +30,7 @@ const Page = async ({ params }: { params: { id: string } }) => {
         <header className="mb-8 flex items-center justify-between">
           <h1 className="text-3xl font-bold">Update note</h1>
           <Button asChild type="button" variant="ghost">
-            <Link href={ROUTES.HOME}>Back to all notes</Link>
+            <Link href={ROUTES.APP}>Back to all notes</Link>
           </Button>
         </header>
 
