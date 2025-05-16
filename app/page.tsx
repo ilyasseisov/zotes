@@ -1,21 +1,26 @@
-import { Button } from "@/components/ui/button";
-import ROUTES from "@/constants/routes";
-import Link from "next/link";
+import Pricing from "@/components/pricing";
 
 export default async function Home() {
   // return
   return (
     <>
-      <main className="container mx-auto max-w-4xl px-4 py-8 text-center">
+      <main className="container mx-auto max-w-5xl px-4 py-8 text-center">
         <header className="mb-8">
-          <h1 className="text-3xl font-bold tracking-tight">Zotes</h1>
-          <p className="mt-1 text-muted-foreground">
+          <h1 className="text-6xl font-bold tracking-tight">Zotes</h1>
+          <p className="mt-1 text-xl text-muted-foreground">
             A minimalist notes application
           </p>
+          <p className="mt-8 text-left text-lg text-muted-foreground">
+            Simple, easy-to-use tool that helps you write down and organize your
+            thoughts. It has a clean design with no extra features to distract
+            you. You can quickly add notes, make lists, and keep everything neat
+            and tidy. Whether you’re keeping track of homework, ideas, or daily
+            tasks, it helps you stay focused and organized without any clutter.
+            It’s perfect for students or anyone who likes to keep things simple.
+          </p>
         </header>
-        <Button asChild type="button">
-          <Link href={ROUTES.APP}>to the App</Link>
-        </Button>
+
+        <Pricing />
       </main>
     </>
   );
