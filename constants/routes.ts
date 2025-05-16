@@ -1,5 +1,5 @@
 const ROUTES = {
-  HOME: "/",
+  HOME: "/notes",
   NEW_NOTE: "/new-note",
   SINGLE_NOTE: (id: string) => `/note/${id}`,
 };
