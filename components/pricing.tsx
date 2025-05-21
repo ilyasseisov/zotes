@@ -1,6 +1,7 @@
 "use client";
 
 import { Check } from "lucide-react";
+import { useRouter } from "next/navigation";
 
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -15,6 +16,13 @@ import {
 import { Separator } from "@/components/ui/separator";
 
 export default function Pricing() {
+  const router = useRouter();
+
+  // Function to handle plan selection
+  const handlePlanSelection = (planType: string) => {
+    router.push(`notes/sign-up/?plan=${planType}`);
+  };
+
   return (
     <div className="container mx-auto px-4 py-12">
       <div className="mb-10 text-center">
@@ -57,7 +65,11 @@ export default function Pricing() {
             </div>
           </CardContent>
           <CardFooter>
-            <Button className="w-full" variant="outline">
+            <Button
+              className="w-full"
+              variant="outline"
+              onClick={() => handlePlanSelection("free")}
+            >
               Get Started
             </Button>
           </CardFooter>
@@ -99,7 +111,12 @@ export default function Pricing() {
             </div>
           </CardContent>
           <CardFooter>
-            <Button className="w-full">Get Started</Button>
+            <Button
+              className="w-full"
+              onClick={() => handlePlanSelection("paid")}
+            >
+              Purchase
+            </Button>
           </CardFooter>
         </Card>
       </div>
