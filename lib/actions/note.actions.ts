@@ -113,7 +113,6 @@ export async function getAllNotesAction() {
     // Convert MongoDB documents to plain JavaScript objects
     // with serializable properties using JSON serialization
     const notes = JSON.parse(JSON.stringify(noteDocs));
-    console.log(notes);
 
     return notes;
   } catch (error: any) {
