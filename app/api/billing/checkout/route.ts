@@ -27,18 +27,13 @@ export async function POST(req: Request) {
       { status: 400 },
     );
   }
-  const { plan } = body;
 
-  // Decide which Stripe price ID to use based on the selected plan
-  const priceId =
-    plan === "paid"
-      ? process.env.STRIPE_PRICE_ID_PAID_PLAN // from .env file
-      : process.env.STRIPE_PRICE_ID_FREE_PLAN;
+  const priceId = process.env.STRIPE_PRICE_ID_PAID_PLAN;
 
   // If no valid price ID was found, return an error
   if (!priceId) {
     return NextResponse.json(
-      { error: "Invalid plan or missing price ID" },
+      { error: "Missing price ID for paid plan" },
       { status: 400 },
     );
   }
@@ -61,6 +56,7 @@ export async function POST(req: Request) {
       metadata: {
         clerkId: user.id,
       },
+      client_reference_id: user.id,
       customer_email: customerEmail,
       // Where to send the user after successful payment
       success_url: body.successUrl,
