@@ -142,7 +142,7 @@ export async function GET(req: Request) {
           },
           client_reference_id: user.id,
           customer_email: customerEmail,
-          success_url: `${url.origin}/notes?success=true`,
+          success_url: `${url.origin}/notes/success`,
           cancel_url: `${url.origin}/pricing?canceled=true`,
         });
 
