@@ -1,4 +1,3 @@
-// api/auth/after-signup/route.ts
 import { NextResponse } from "next/server";
 import { currentUser } from "@clerk/nextjs/server";
 import UserModel from "@/lib/models/user";
