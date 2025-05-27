@@ -143,7 +143,7 @@ export async function GET(req: Request) {
           client_reference_id: user.id,
           customer_email: customerEmail,
           success_url: `${url.origin}/success`,
-          cancel_url: `${url.origin}/pricing?canceled=true`,
+          cancel_url: `${url.origin}/cancel`,
         });
 
         console.log(
