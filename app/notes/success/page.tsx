@@ -9,7 +9,7 @@ const Page = () => {
   // functions
   // return
   return (
-    <div className="flex flex-col items-center justify-center space-y-6 text-center">
+    <div className="flex h-screen flex-col items-center justify-center space-y-6 text-center">
       <h1 className="text-3xl font-bold">Thank You for Your Purchase!</h1>
       <p className="text-lg text-muted-foreground">
         We appreciate your support. You can now start using the Notes App.
