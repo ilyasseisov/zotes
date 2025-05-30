@@ -153,17 +153,3 @@ export async function POST(req: Request) {
   return NextResponse.json({ received: true }, { status: 200 });
   //
 }
-
-///////////////////
-///////////////////
-///////////////////
-// app/api/webhook/route.ts
-// import { NextResponse } from "next/server";
-
-// export async function POST(req: Request) {
-//   console.log("[API_STRIPE_WEBHOOK] Request received.");
-//   return NextResponse.json({ message: "Webhook received!" }, { status: 200 });
-// }
-// export async function GET() {
-//   return NextResponse.json({ message: "GET works!" });
-// }

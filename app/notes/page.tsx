@@ -8,10 +8,34 @@ import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { AlertCircle } from "lucide-react";
 import NotesListFilter from "@/components/notes-list-filter";
 
+import { currentUser } from "@clerk/nextjs/server";
+import dbConnect from "@/lib/db";
+import UserModel from "@/lib/models/user";
+import { Badge } from "@/components/ui/badge";
+import UpgradeButton from "@/components/upgrade-button";
+
 export default async function Home() {
   // vars
   let notes: Note[] = [];
   let error = null;
+  let userPlan = "free"; // default plan
+
+  // get user
+  // Get current user and their plan
+  try {
+    const user = await currentUser();
+    if (user?.id) {
+      await dbConnect();
+      const dbUser = await UserModel.findOne({ clerkId: user.id });
+      if (dbUser) {
+        userPlan = dbUser.planId;
+      }
+    }
+  } catch (err) {
+    console.error("Error fetching user plan:", err);
+    // Continue with default plan if user fetch fails
+  }
+
   // data fetching
   // Fetch all notes when the page loads
   try {
@@ -50,15 +74,22 @@ export default async function Home() {
     }
   };
 
+  // plan text
+  const getPlanDisplayText = (plan: string) => {
+    return plan === "paid" ? "Pro" : "Free";
+  };
+
   // return
   return (
     <>
       <main className="container mx-auto max-w-4xl px-4 py-8">
         <header className="mb-8">
+          <Badge className="mb-2 mt-2">{getPlanDisplayText(userPlan)}</Badge>
           <h1 className="text-3xl font-bold tracking-tight">Zotes</h1>
-          <p className="mt-1 text-muted-foreground">
+          <p className="mb-2 mt-1 text-muted-foreground">
             A minimalist notes application
           </p>
+          <div>{userPlan === "free" && <UpgradeButton />}</div>
         </header>
 
         <div className="mb-6 flex justify-end">
