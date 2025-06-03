@@ -1,4 +1,5 @@
 const ROUTES = {
+  LANDING_PAGE: "/",
   APP: "/notes",
   NEW_NOTE: "/notes/new-note",
   SINGLE_NOTE: (id: string) => `/notes/note/${id}`,
