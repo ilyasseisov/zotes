@@ -20,6 +20,7 @@ export default function Page() {
           unsafeMetadata={{
             selectedPlan: plan,
           }}
+          signInUrl="/notes/sign-in"
         />
       </div>
     </div>
