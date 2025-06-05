@@ -23,7 +23,9 @@ export async function GET(req: Request) {
       console.log(
         "[API_AFTER_SIGNUP] No Clerk user or user ID found, redirecting to APP root.",
       );
-      return NextResponse.redirect(new URL(ROUTES.APP || "/", req.url));
+      return NextResponse.redirect(
+        new URL(ROUTES.LANDING_PAGE || "/", req.url),
+      );
     }
 
     const url = new URL(req.url);
@@ -46,7 +48,9 @@ export async function GET(req: Request) {
       console.log(
         `[API_AFTER_SIGNUP] Invalid plan type: '${plan}'. Redirecting to APP root.`,
       );
-      return NextResponse.redirect(new URL(ROUTES.APP || "/", req.url));
+      return NextResponse.redirect(
+        new URL(ROUTES.LANDING_PAGE || "/", req.url),
+      );
     }
 
     // Database connection and user creation logic (same as before)
@@ -169,7 +173,7 @@ export async function GET(req: Request) {
     if (error.stack) {
       console.error("Error stack:", error.stack);
     }
-    const errorRedirectUrl = new URL(ROUTES.APP || "/", req.url);
+    const errorRedirectUrl = new URL(ROUTES.LANDING_PAGE || "/", req.url);
     console.log(
       `[API_AFTER_SIGNUP] Redirecting to APP root due to error: ${errorRedirectUrl.toString()}`,
     );
