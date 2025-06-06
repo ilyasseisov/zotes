@@ -41,19 +41,25 @@ export async function GET(req: Request) {
       `[API_AFTER_SIGNUP] Plan from Clerk unsafeMetadata: '${planFromMetadata}'`,
     );
 
+    // Default to "free" if no plan is provided from any source
     const plan = planFromUrl || planFromMetadata || "free";
-    console.log(`[API_AFTER_SIGNUP] Final plan determined as: '${plan}'`);
+    console.log(
+      `[API_AFTER_SIGNUP] Final plan determined as: '${plan}' (defaulted to 'free' if no plan was provided)`,
+    );
 
     if (plan !== "free" && plan !== "paid") {
       console.log(
-        `[API_AFTER_SIGNUP] Invalid plan type: '${plan}'. Redirecting to APP root.`,
+        `[API_AFTER_SIGNUP] Invalid plan type: '${plan}'. Defaulting to 'free' plan.`,
       );
-      return NextResponse.redirect(
-        new URL(ROUTES.LANDING_PAGE || "/", req.url),
-      );
+      // Instead of redirecting on invalid plan, default to free
+      const defaultPlan = "free";
+      console.log(`[API_AFTER_SIGNUP] Using default plan: '${defaultPlan}'`);
     }
 
-    // Database connection and user creation logic (same as before)
+    // Use the validated plan (either the determined plan if valid, or "free" as fallback)
+    const finalPlan = plan === "free" || plan === "paid" ? plan : "free";
+
+    // Database connection and user creation logic
     console.log("[API_AFTER_SIGNUP] Attempting to connect to database...");
     const dbResult = await dbConnect();
 
@@ -78,14 +84,14 @@ export async function GET(req: Request) {
 
     if (!existingUser) {
       console.log(
-        `[API_AFTER_SIGNUP] Creating new user in DB with Clerk ID: ${user.id}, Plan: ${plan}`,
+        `[API_AFTER_SIGNUP] Creating new user in DB with Clerk ID: ${user.id}, Plan: ${finalPlan}`,
       );
       try {
         const newUser = await UserModel.create({
           clerkId: user.id,
           email: user.emailAddresses?.[0]?.emailAddress,
-          hasAccess: plan === "free",
-          planId: plan,
+          hasAccess: finalPlan === "free",
+          planId: finalPlan,
         });
         console.log(
           `[API_AFTER_SIGNUP] New user created successfully in DB. DB ID: ${newUser._id}`,
@@ -105,19 +111,19 @@ export async function GET(req: Request) {
       }
     } else {
       console.log(
-        `[API_AFTER_SIGNUP] User with Clerk ID: ${user.id} already exists in DB. DB ID: ${existingUser._id}. Current plan in DB: ${existingUser.planId}. Selected plan: ${plan}`,
+        `[API_AFTER_SIGNUP] User with Clerk ID: ${user.id} already exists in DB. DB ID: ${existingUser._id}. Current plan in DB: ${existingUser.planId}. Selected plan: ${finalPlan}`,
       );
     }
 
     // Handle redirects based on plan
-    if (plan === "free") {
+    if (finalPlan === "free") {
       const notesRedirectUrl = new URL("/notes", req.url);
       console.log(
         `[API_AFTER_SIGNUP] Plan is 'free'. Redirecting to: ${notesRedirectUrl.toString()}`,
       );
       return NextResponse.redirect(notesRedirectUrl);
     } else {
-      // plan === "paid" - Create Stripe checkout session directly
+      // finalPlan === "paid" - Create Stripe checkout session directly
       console.log(
         "[API_AFTER_SIGNUP] Plan is 'paid'. Creating Stripe checkout session...",
       );
