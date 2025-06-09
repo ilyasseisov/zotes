@@ -231,7 +231,15 @@ export async function GET(req: Request) {
       );
       return NextResponse.redirect(notesRedirectUrl);
     } else {
-      // finalPlan === "paid" - Create Stripe checkout session directly
+      // Check if user already has a paid plan
+      if (existingUser && existingUser.planId === "paid") {
+        console.log(
+          `[API_AFTER_SIGNUP] User already has a paid plan. Redirecting to notes.`,
+        );
+        return NextResponse.redirect(new URL("/notes", cleanUrl.origin));
+      }
+
+      // Continue with Stripe checkout for new paid subscriptions
       console.log(
         "[API_AFTER_SIGNUP] Plan is 'paid'. Creating Stripe checkout session...",
       );
