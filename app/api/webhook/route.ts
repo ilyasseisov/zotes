@@ -25,8 +25,12 @@ export async function POST(req: Request) {
     );
   }
   //
-  const body = await req.text(); // Stripe requires the raw body to verify the signature
-  const signature = headers().get("stripe-signature") as string;
+  const body = await req.text();
+  const signature = req.headers.get("stripe-signature");
+
+  if (!signature) {
+    return new Response("No stripe signature found", { status: 400 });
+  }
 
   let event: Stripe.Event;
   //
