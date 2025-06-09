@@ -20,14 +20,13 @@ export default async function Home() {
   let error = null;
   let userPlan = "free"; // default plan
 
-  // get user
   // Get current user and their plan
   try {
     const user = await currentUser();
     if (user?.id) {
       await dbConnect();
       const dbUser = await UserModel.findOne({ clerkId: user.id });
-      if (dbUser) {
+      if (dbUser && dbUser.planId === "paid" && dbUser.hasAccess) {
         userPlan = dbUser.planId;
       }
     }
