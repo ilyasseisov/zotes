@@ -2,7 +2,6 @@ import { NextResponse } from "next/server";
 import dbConnect from "@/lib/db";
 import UserModel from "@/lib/models/user";
 import Stripe from "stripe";
-import { headers } from "next/headers";
 
 // Initialize Stripe
 const stripe = new Stripe(process.env.STRIPE_API_KEY!, {
