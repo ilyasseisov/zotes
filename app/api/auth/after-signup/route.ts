@@ -10,26 +10,134 @@ const stripe = new Stripe(process.env.STRIPE_API_KEY!, {
   apiVersion: "2025-04-30.basil",
 });
 
+// Retry configuration
+const MAX_RETRIES = 3;
+const RETRY_DELAY = 500; // milliseconds
+const BACKOFF_MULTIPLIER = 1.5; // Exponential backoff
+
+/**
+ * Attempts to get current user with retry logic
+ * Implements exponential backoff to handle timing issues
+ */
+async function getCurrentUserWithRetry(): Promise<any> {
+  for (let attempt = 1; attempt <= MAX_RETRIES; attempt++) {
+    try {
+      console.log(
+        `[API_AFTER_SIGNUP] Attempt ${attempt}/${MAX_RETRIES}: Fetching current user...`,
+      );
+
+      const user = await currentUser();
+
+      if (user && user.id) {
+        console.log(
+          `[API_AFTER_SIGNUP] Success on attempt ${attempt}: User found with ID: ${user.id}`,
+        );
+        return user;
+      }
+
+      console.log(
+        `[API_AFTER_SIGNUP] Attempt ${attempt}/${MAX_RETRIES}: No user found`,
+      );
+
+      // Don't wait after the last attempt
+      if (attempt < MAX_RETRIES) {
+        const delay = RETRY_DELAY * Math.pow(BACKOFF_MULTIPLIER, attempt - 1);
+        console.log(`[API_AFTER_SIGNUP] Waiting ${delay}ms before retry...`);
+        await new Promise((resolve) => setTimeout(resolve, delay));
+      }
+    } catch (error) {
+      console.error(`[API_AFTER_SIGNUP] Error on attempt ${attempt}:`, error);
+
+      // Don't wait after the last attempt or if it's a critical error
+      if (attempt < MAX_RETRIES) {
+        const delay = RETRY_DELAY * Math.pow(BACKOFF_MULTIPLIER, attempt - 1);
+        console.log(
+          `[API_AFTER_SIGNUP] Error occurred, waiting ${delay}ms before retry...`,
+        );
+        await new Promise((resolve) => setTimeout(resolve, delay));
+      }
+    }
+  }
+
+  console.log(
+    `[API_AFTER_SIGNUP] All ${MAX_RETRIES} attempts failed to get user`,
+  );
+  return null;
+}
+
+/**
+ * Checks if this is a retry request and handles retry logic
+ */
+function getRetryInfo(url: URL): { isRetry: boolean; retryCount: number } {
+  const retryParam = url.searchParams.get("retry");
+  const retryCount = retryParam ? parseInt(retryParam, 10) : 0;
+  return {
+    isRetry: retryCount > 0,
+    retryCount: isNaN(retryCount) ? 0 : retryCount,
+  };
+}
+
+/**
+ * Creates a retry URL with incremented retry count
+ */
+function createRetryUrl(
+  originalUrl: string,
+  currentRetryCount: number,
+): string {
+  const url = new URL(originalUrl);
+  url.searchParams.set("retry", (currentRetryCount + 1).toString());
+  return url.toString();
+}
+
 export async function GET(req: Request) {
-  console.log(`[API_AFTER_SIGNUP] START: Received request for URL: ${req.url}`);
+  const requestUrl = req.url;
+  console.log(
+    `[API_AFTER_SIGNUP] START: Received request for URL: ${requestUrl}`,
+  );
+
+  // Check if this is a retry request
+  const url = new URL(requestUrl);
+  const { isRetry, retryCount } = getRetryInfo(url);
+
+  if (isRetry) {
+    console.log(`[API_AFTER_SIGNUP] This is retry attempt #${retryCount}`);
+  }
 
   try {
-    const user = await currentUser();
+    // Use retry logic to get current user
+    const user = await getCurrentUserWithRetry();
+
     console.log(
-      `[API_AFTER_SIGNUP] Clerk user: ${user ? `ID: ${user.id}, Email: ${user.emailAddresses?.[0]?.emailAddress}` : "No user found by Clerk"}`,
+      `[API_AFTER_SIGNUP] Final user result: ${user ? `ID: ${user.id}, Email: ${user.emailAddresses?.[0]?.emailAddress}` : "No user found after all retries"}`,
     );
 
     if (!user || !user.id) {
+      // If we still don't have a user after retries, try one more client-side retry
+      if (retryCount < 2) {
+        console.log(
+          `[API_AFTER_SIGNUP] No user found after server retries. Attempting client-side retry #${retryCount + 1}`,
+        );
+
+        const retryUrl = createRetryUrl(requestUrl, retryCount);
+        console.log(`[API_AFTER_SIGNUP] Redirecting to retry URL: ${retryUrl}`);
+
+        return NextResponse.redirect(retryUrl);
+      }
+
+      // Final fallback - redirect to landing page
       console.log(
-        "[API_AFTER_SIGNUP] No Clerk user or user ID found, redirecting to APP root.",
+        "[API_AFTER_SIGNUP] No Clerk user found after all retry attempts, redirecting to APP root.",
       );
       return NextResponse.redirect(
-        new URL(ROUTES.LANDING_PAGE || "/", req.url),
+        new URL(ROUTES.LANDING_PAGE || "/", requestUrl),
       );
     }
 
-    const url = new URL(req.url);
-    const planFromUrl = url.searchParams.get("plan");
+    // Clear retry parameter from URL for clean URLs going forward
+    const cleanUrl = new URL(requestUrl);
+    cleanUrl.searchParams.delete("retry");
+
+    const planFromUrl = cleanUrl.searchParams.get("plan");
     console.log(
       `[API_AFTER_SIGNUP] Plan from URL query parameter: '${planFromUrl}'`,
     );
@@ -117,7 +225,7 @@ export async function GET(req: Request) {
 
     // Handle redirects based on plan
     if (finalPlan === "free") {
-      const notesRedirectUrl = new URL("/notes", req.url);
+      const notesRedirectUrl = new URL("/notes", cleanUrl.origin);
       console.log(
         `[API_AFTER_SIGNUP] Plan is 'free'. Redirecting to: ${notesRedirectUrl.toString()}`,
       );
@@ -152,8 +260,8 @@ export async function GET(req: Request) {
           },
           client_reference_id: user.id,
           customer_email: customerEmail,
-          success_url: `${url.origin}/success`,
-          cancel_url: `${url.origin}/cancel`,
+          success_url: `${cleanUrl.origin}/success`,
+          cancel_url: `${cleanUrl.origin}/cancel`,
         });
 
         console.log(
@@ -179,7 +287,14 @@ export async function GET(req: Request) {
     if (error.stack) {
       console.error("Error stack:", error.stack);
     }
-    const errorRedirectUrl = new URL(ROUTES.LANDING_PAGE || "/", req.url);
+
+    // Include retry info in error logging
+    const { retryCount } = getRetryInfo(new URL(requestUrl));
+    console.error(
+      `[API_AFTER_SIGNUP] Error occurred on retry attempt: ${retryCount}`,
+    );
+
+    const errorRedirectUrl = new URL(ROUTES.LANDING_PAGE || "/", requestUrl);
     console.log(
       `[API_AFTER_SIGNUP] Redirecting to APP root due to error: ${errorRedirectUrl.toString()}`,
     );
