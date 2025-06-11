@@ -139,7 +139,7 @@ export async function POST(req: Request) {
           { customerId: subscription.customer as string },
           {
             $set: {
-              hasAccess: false,
+              hasAccess: true,
               planId: "free",
             },
           },
