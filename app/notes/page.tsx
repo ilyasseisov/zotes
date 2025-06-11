@@ -13,6 +13,7 @@ import dbConnect from "@/lib/db";
 import UserModel from "@/lib/models/user";
 import { Badge } from "@/components/ui/badge";
 import UpgradeButton from "@/components/upgrade-button";
+import PortalButton from "@/components/portal-button";
 
 export default async function Home() {
   // vars
@@ -88,7 +89,9 @@ export default async function Home() {
           <p className="mb-2 mt-1 text-muted-foreground">
             A minimalist notes application
           </p>
-          <div>{userPlan === "free" && <UpgradeButton />}</div>
+          <div>
+            {userPlan === "free" ? <UpgradeButton /> : <PortalButton />}
+          </div>
         </header>
 
         <div className="mb-6 flex justify-end">

@@ -128,6 +128,39 @@ export async function POST(req: Request) {
         );
         break;
 
+      case "customer.subscription.deleted":
+        const subscription = dataObject as Stripe.Subscription;
+        console.log(
+          `[API_STRIPE_WEBHOOK] Handling 'customer.subscription.deleted' for subscription ID: ${subscription.id}`,
+        );
+
+        // Find and update user with the customer ID
+        const updatedUserOnDelete = await UserModel.findOneAndUpdate(
+          { customerId: subscription.customer as string },
+          {
+            $set: {
+              hasAccess: false,
+              planId: "free",
+            },
+          },
+          { new: true },
+        );
+
+        if (!updatedUserOnDelete) {
+          console.error(
+            `[API_STRIPE_WEBHOOK] 'customer.subscription.deleted': User with Customer ID ${subscription.customer} not found in DB.`,
+          );
+          return NextResponse.json(
+            { error: "User not found for update" },
+            { status: 404 },
+          );
+        }
+
+        console.log(
+          `[API_STRIPE_WEBHOOK] 'customer.subscription.deleted': User updated successfully. New plan: ${updatedUserOnDelete.planId}, Has access: ${updatedUserOnDelete.hasAccess}`,
+        );
+        break;
+
       default:
         console.warn(
           `[API_STRIPE_WEBHOOK] Unhandled event type: ${event.type}`,
