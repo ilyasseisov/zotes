@@ -1,4 +1,6 @@
 import Pricing from "@/components/pricing";
+import ROUTES from "@/constants/routes";
+import Link from "next/link";
 
 export default async function Home() {
   // return
@@ -6,6 +8,10 @@ export default async function Home() {
     <>
       <main className="container mx-auto max-w-5xl px-4 py-8 text-center">
         <header className="mb-8">
+          <nav className="mb-8 space-x-8">
+            <Link href={ROUTES.SIGN_IN}>Sign In</Link>
+            <Link href={ROUTES.SIGN_UP}>Sign Up</Link>
+          </nav>
           <h1 className="text-6xl font-bold tracking-tight">Zotes</h1>
           <p className="mt-1 text-xl text-muted-foreground">
             A minimalist notes application
