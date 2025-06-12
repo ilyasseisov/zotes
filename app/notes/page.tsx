@@ -27,7 +27,8 @@ export default async function Home() {
     if (user?.id) {
       await dbConnect();
       const dbUser = await UserModel.findOne({ clerkId: user.id });
-      if (dbUser && dbUser.planId === "paid" && dbUser.hasAccess) {
+      // Removed dbUser.hasAccess as it's no longer needed
+      if (dbUser && dbUser.planId === "paid") {
         userPlan = dbUser.planId;
       }
     }

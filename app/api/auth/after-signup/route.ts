@@ -160,6 +160,8 @@ export async function GET(req: Request) {
         `[API_AFTER_SIGNUP] Invalid plan type: '${plan}'. Defaulting to 'free' plan.`,
       );
       // Instead of redirecting on invalid plan, default to free
+      // Note: This 'defaultPlan' variable is not used after this point if 'plan' is invalid
+      // as 'finalPlan' is determined below.
       const defaultPlan = "free";
       console.log(`[API_AFTER_SIGNUP] Using default plan: '${defaultPlan}'`);
     }
@@ -191,69 +193,121 @@ export async function GET(req: Request) {
     );
 
     if (!existingUser) {
+      // New user: Always create as 'free' plan.
       console.log(
-        `[API_AFTER_SIGNUP] Creating new user in DB with Clerk ID: ${user.id}, Plan: ${finalPlan}`,
+        `[API_AFTER_SIGNUP] Creating new user in DB with Clerk ID: ${user.id}, Plan: 'free' (defaulting to free plan on initial creation)`,
       );
       try {
         const newUser = await UserModel.create({
           clerkId: user.id,
           email: user.emailAddresses?.[0]?.emailAddress,
-          hasAccess: finalPlan === "free",
-          planId: finalPlan,
+          planId: "free", // New users always start as free
         });
         console.log(
           `[API_AFTER_SIGNUP] New user created successfully in DB. DB ID: ${newUser._id}`,
         );
+        // After creating a new user as 'free', if their intent was 'paid', redirect to Stripe.
+        if (finalPlan === "paid") {
+          console.log(
+            `[API_AFTER_SIGNUP] New user's selected plan is 'paid'. Redirecting to Stripe checkout.`,
+          );
+          const customerEmail = user.emailAddresses[0]?.emailAddress;
+          const priceId = process.env.STRIPE_PRICE_ID_PAID_PLAN;
+
+          if (!priceId) {
+            console.error(
+              "[API_AFTER_SIGNUP] Missing Stripe price ID for new user paid plan.",
+            );
+            throw new Error("Missing price ID for paid plan");
+          }
+
+          try {
+            const session = await stripe.checkout.sessions.create({
+              mode: "subscription",
+              payment_method_types: ["card"],
+              line_items: [
+                {
+                  price: priceId,
+                  quantity: 1,
+                },
+              ],
+              metadata: {
+                clerkId: user.id,
+              },
+              client_reference_id: user.id,
+              customer_email: customerEmail,
+              success_url: `${cleanUrl.origin}/success`,
+              cancel_url: `${cleanUrl.origin}/cancel`,
+            });
+            return NextResponse.redirect(session.url!);
+          } catch (stripeError) {
+            console.error(
+              "[API_AFTER_SIGNUP] Error creating Stripe checkout session for new user:",
+              stripeError,
+            );
+            throw stripeError;
+          }
+        } else {
+          // New user selected 'free' plan, redirect to notes
+          const notesRedirectUrl = new URL("/notes", cleanUrl.origin);
+          console.log(
+            `[API_AFTER_SIGNUP] New user selected 'free' plan. Redirecting to: ${notesRedirectUrl.toString()}`,
+          );
+          return NextResponse.redirect(notesRedirectUrl);
+        }
       } catch (error: any) {
         console.error(
-          "[API_AFTER_SIGNUP] Error creating new user in DB:",
+          "[API_AFTER_SIGNUP] Error creating new user in DB or processing Stripe for new user:",
           error,
         );
         if (error.code === 11000) {
           console.error(
             "[API_AFTER_SIGNUP] Duplicate user error (code 11000) during create. This might indicate a race condition or prior creation. Proceeding as if user exists.",
           );
+          // If duplicate error, treat as existing user and continue to the 'else' block below
+          // to handle redirection based on existing DB state and current intent.
         } else {
           throw error;
         }
       }
-    } else {
-      console.log(
-        `[API_AFTER_SIGNUP] User with Clerk ID: ${user.id} already exists in DB. DB ID: ${existingUser._id}. Current plan in DB: ${existingUser.planId}. Selected plan: ${finalPlan}`,
-      );
     }
 
-    // Handle redirects based on plan
-    if (finalPlan === "free") {
-      const notesRedirectUrl = new URL("/notes", cleanUrl.origin);
-      console.log(
-        `[API_AFTER_SIGNUP] Plan is 'free'. Redirecting to: ${notesRedirectUrl.toString()}`,
-      );
-      return NextResponse.redirect(notesRedirectUrl);
-    } else {
-      // Check if user already has a paid plan
-      if (existingUser && existingUser.planId === "paid") {
-        console.log(
-          `[API_AFTER_SIGNUP] User already has a paid plan. Redirecting to notes.`,
-        );
-        return NextResponse.redirect(new URL("/notes", cleanUrl.origin));
-      }
+    // --- Logic for existing users ---
+    // If the code reaches here, it means existingUser was found, or a duplicate error occurred
+    // during new user creation (in which case we treat them as an existing user).
 
-      // Continue with Stripe checkout for new paid subscriptions
+    // Scenario 1: User is already a paid user in DB. Redirect to notes.
+    if (existingUser && existingUser.planId === "paid") {
       console.log(
-        "[API_AFTER_SIGNUP] Plan is 'paid'. Creating Stripe checkout session...",
+        `[API_AFTER_SIGNUP] User already has a paid plan in DB. Redirecting to notes.`,
+      );
+      return NextResponse.redirect(new URL("/notes", cleanUrl.origin));
+    }
+
+    // Scenario 2: User is free in DB.
+    // Check if they are trying to upgrade or just logging in as free.
+    // They should only be redirected to Stripe if their DB plan is 'free'
+    // AND they explicitly selected a 'paid' plan *in this session* (via URL param).
+    if (
+      existingUser &&
+      existingUser.planId === "free" &&
+      planFromUrl === "paid"
+    ) {
+      console.log(
+        "[API_AFTER_SIGNUP] User is free in DB and explicitly attempting to upgrade. Creating Stripe checkout session...",
       );
 
       const customerEmail = user.emailAddresses[0]?.emailAddress;
       const priceId = process.env.STRIPE_PRICE_ID_PAID_PLAN;
 
       if (!priceId) {
-        console.error("[API_AFTER_SIGNUP] Missing Stripe price ID");
+        console.error(
+          "[API_AFTER_SIGNUP] Missing Stripe price ID for existing user upgrade.",
+        );
         throw new Error("Missing price ID for paid plan");
       }
 
       try {
-        // Create Stripe checkout session
         const session = await stripe.checkout.sessions.create({
           mode: "subscription",
           payment_method_types: ["card"],
@@ -276,15 +330,24 @@ export async function GET(req: Request) {
           `[API_AFTER_SIGNUP] Stripe checkout session created. Redirecting to: ${session.url}`,
         );
 
-        // Redirect to Stripe checkout
         return NextResponse.redirect(session.url!);
       } catch (stripeError) {
         console.error(
-          "[API_AFTER_SIGNUP] Error creating Stripe checkout session:",
+          "[API_AFTER_SIGNUP] Error creating Stripe checkout session for existing user upgrade:",
           stripeError,
         );
         throw stripeError;
       }
+    } else {
+      // Scenario 3: User is free in DB, and NOT explicitly attempting an upgrade.
+      // This covers the reported bug: cancelled paid user logs in, DB plan is 'free',
+      // but Clerk metadata might still show 'paid'. Since 'planFromUrl' is not 'paid',
+      // they should be treated as a free user and redirected to notes.
+      const notesRedirectUrl = new URL("/notes", cleanUrl.origin);
+      console.log(
+        `[API_AFTER_SIGNUP] Existing user is free and not attempting explicit upgrade. Redirecting to notes as free user: ${notesRedirectUrl.toString()}`,
+      );
+      return NextResponse.redirect(notesRedirectUrl);
     }
   } catch (error: any) {
     console.error(

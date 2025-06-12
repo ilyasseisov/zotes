@@ -100,7 +100,7 @@ export async function POST(req: Request) {
           { clerkId: clerkId },
           {
             $set: {
-              hasAccess: true,
+              // Removed hasAccess: true, as it's now redundant
               planId: "paid",
               customerId: stripeCustomerId,
               // Consider adding subscriptionId and subscriptionStatus to your User schema
@@ -124,7 +124,7 @@ export async function POST(req: Request) {
         }
 
         console.log(
-          `[API_STRIPE_WEBHOOK] 'checkout.session.completed': User ${clerkId} updated successfully. New plan: ${updatedUser.planId}, Has access: ${updatedUser.hasAccess}, Stripe Customer ID: ${updatedUser.customerId}`,
+          `[API_STRIPE_WEBHOOK] 'checkout.session.completed': User ${clerkId} updated successfully. New plan: ${updatedUser.planId}, Customer ID: ${updatedUser.customerId}`,
         );
         break;
 
@@ -139,7 +139,7 @@ export async function POST(req: Request) {
           { customerId: subscription.customer as string },
           {
             $set: {
-              hasAccess: true,
+              // Removed hasAccess: true, as it's now redundant and plan is set to free
               planId: "free",
             },
           },
@@ -157,7 +157,7 @@ export async function POST(req: Request) {
         }
 
         console.log(
-          `[API_STRIPE_WEBHOOK] 'customer.subscription.deleted': User updated successfully. New plan: ${updatedUserOnDelete.planId}, Has access: ${updatedUserOnDelete.hasAccess}`,
+          `[API_STRIPE_WEBHOOK] 'customer.subscription.deleted': User updated successfully. New plan: ${updatedUserOnDelete.planId}`,
         );
         break;
 

@@ -3,7 +3,6 @@ import { Schema, model, models } from "mongoose";
 // Define the interface for TypeScript
 interface User {
   clerkId: string; // Clerk user ID
-  hasAccess: boolean;
   customerId?: string;
   planId: "free" | "paid";
   createdAt?: Date;
@@ -18,10 +17,6 @@ const UserSchema = new Schema(
       required: true,
       unique: true,
       trim: true,
-    },
-    hasAccess: {
-      type: Boolean,
-      default: false, // Set the default value to false as requested
     },
     customerId: {
       // Stripe customer ID returned from Stripe (for paid plan)
