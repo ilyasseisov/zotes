@@ -14,6 +14,15 @@ import UserModel from "@/lib/models/user";
 import { Badge } from "@/components/ui/badge";
 import UpgradeButton from "@/components/upgrade-button";
 import PortalButton from "@/components/portal-button";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+  TooltipProvider,
+} from "@/components/ui/tooltip";
+
+// Define the maximum number of notes for free plan users
+const MAX_FREE_NOTES = 3;
 
 export default async function Home() {
   // vars
@@ -27,7 +36,8 @@ export default async function Home() {
     if (user?.id) {
       await dbConnect();
       const dbUser = await UserModel.findOne({ clerkId: user.id });
-      // Removed dbUser.hasAccess as it's no longer needed
+      // If dbUser exists and their planId is 'paid', set userPlan to 'paid'.
+      // Otherwise, it remains 'free' by default.
       if (dbUser && dbUser.planId === "paid") {
         userPlan = dbUser.planId;
       }
@@ -64,6 +74,11 @@ export default async function Home() {
     throw err;
   }
 
+  // Determine if the "New note" button should be disabled
+  // It's disabled if the user is on the free plan and has reached or exceeded the note limit
+  const isNewNoteButtonDisabled =
+    userPlan === "free" && notes.length >= MAX_FREE_NOTES;
+
   const getErrorMessage = (code?: string) => {
     switch (code) {
       case "DB_URI_MISSING":
@@ -96,9 +111,22 @@ export default async function Home() {
         </header>
 
         <div className="mb-6 flex justify-end">
-          <Button asChild>
-            <Link href={ROUTES.NEW_NOTE}>+ New note</Link>
-          </Button>
+          {isNewNoteButtonDisabled ? (
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button className="opacity-50">+ New note</Button>
+                </TooltipTrigger>
+                <TooltipContent>
+                  <p>Upgrade to get more</p>
+                </TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
+          ) : (
+            <Button asChild>
+              <Link href={ROUTES.NEW_NOTE}>+ New note</Link>
+            </Button>
+          )}
         </div>
 
         <section>
