@@ -1,3 +1,6 @@
+import ROUTES from "@/constants/routes";
+import Link from "next/link";
+
 const Page = () => {
   // data fetching
   // hooks
@@ -19,6 +22,9 @@ const Page = () => {
         We&apos;re here to help! Please contact us directly at{" "}
         <span className="font-semibold">support@zotes.top</span>
       </p>
+      <Link className="underline" href={ROUTES.LANDING_PAGE}>
+        Back to Home
+      </Link>
     </div>
   );
 };
