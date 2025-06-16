@@ -152,22 +152,24 @@ export async function GET(req: Request) {
     // Default to "free" if no plan is provided from any source
     const plan = planFromUrl || planFromMetadata || "free";
     console.log(
-      `[API_AFTER_SIGNUP] Final plan determined as: '${plan}' (defaulted to 'free' if no plan was provided)`,
+      `[API_AFTER_SIGNUP] Initial plan determined as: '${plan}' (defaulted to 'free' if no plan was provided)`,
     );
 
     if (plan !== "free" && plan !== "paid") {
       console.log(
         `[API_AFTER_SIGNUP] Invalid plan type: '${plan}'. Defaulting to 'free' plan.`,
       );
-      // Instead of redirecting on invalid plan, default to free
-      // Note: This 'defaultPlan' variable is not used after this point if 'plan' is invalid
-      // as 'finalPlan' is determined below.
-      const defaultPlan = "free";
-      console.log(`[API_AFTER_SIGNUP] Using default plan: '${defaultPlan}'`);
+      // No change needed here, as the 'finalPlan' logic below handles the actual fallback.
     }
 
     // Use the validated plan (either the determined plan if valid, or "free" as fallback)
     const finalPlan = plan === "free" || plan === "paid" ? plan : "free";
+
+    // --- NEW LOGGING ADDED HERE ---
+    console.log(
+      `[API_AFTER_SIGNUP] EFFECTIVE PLAN FOR REDIRECTION: '${finalPlan}'`,
+    );
+    // --- END NEW LOGGING ---
 
     // Database connection and user creation logic
     console.log("[API_AFTER_SIGNUP] Attempting to connect to database...");
@@ -291,7 +293,7 @@ export async function GET(req: Request) {
     if (
       existingUser &&
       existingUser.planId === "free" &&
-      planFromUrl === "paid"
+      planFromUrl === "paid" // Crucial check: only redirect to Stripe if URL explicitly states "paid"
     ) {
       console.log(
         "[API_AFTER_SIGNUP] User is free in DB and explicitly attempting to upgrade. Creating Stripe checkout session...",
