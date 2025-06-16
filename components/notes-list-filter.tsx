@@ -1,6 +1,7 @@
+// notes-list-filter.tsx
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { Input } from "@/components/ui/input";
 import {
   Card,
@@ -11,28 +12,49 @@ import {
   CardContent,
 } from "@/components/ui/card";
 import Link from "next/link";
-import ROUTES from "@/constants/routes"; // Assuming ROUTES is defined
-import DeleteNoteButton from "@/components/delete-note-button"; // Assuming DeleteNoteButton is defined
+import ROUTES from "@/constants/routes";
+import DeleteNoteButton from "@/components/delete-note-button";
 
 interface NotesListFilterProps {
-  notes: Note[];
+  notes: Note[]; // This will now be the initial notes
 }
 
-const NotesListFilter = ({ notes }: NotesListFilterProps) => {
+const NotesListFilter = ({ notes: initialNotes }: NotesListFilterProps) => {
+  // Rename prop for clarity
   const [filterText, setFilterText] = useState("");
+  // Manage notes internally for optimistic updates
+  const [currentNotes, setCurrentNotes] = useState(initialNotes); // <-- NEW STATE
 
-  // Use useMemo to efficiently filter notes whenever filterText or original notes change
+  // Update internal state if initialNotes prop changes (e.g., after a new note is added, or a full page refresh)
+  // This ensures the client-side list is synced with the server's data when it updates.
+  useEffect(() => {
+    setCurrentNotes(initialNotes);
+  }, [initialNotes]);
+
+  // Use useMemo to efficiently filter notes whenever filterText or internal notes state change
   const filteredNotes = useMemo(() => {
     if (!filterText) {
-      return notes; // Return all notes if filter is empty
+      return currentNotes; // Return all notes from internal state if filter is empty
     }
 
     const lowerCaseFilterText = filterText.toLowerCase();
 
-    return notes.filter((note) =>
+    return currentNotes.filter((note) =>
       note.title.toLowerCase().includes(lowerCaseFilterText),
     );
-  }, [notes, filterText]); // Re-compute when notes or filterText change
+  }, [currentNotes, filterText]); // Depend on internal notes state
+
+  // Function to remove a note by ID - passed to DeleteNoteButton
+  const handleNoteDeleted = (deletedNoteId: string) => {
+    setCurrentNotes((prevNotes) =>
+      prevNotes.filter((note) => note._id !== deletedNoteId),
+    );
+  };
+
+  // Determine what message to show based on the current state
+  const isInitialEmpty = initialNotes.length === 0;
+  const isFilteredEmpty = filteredNotes.length === 0;
+  const isFiltering = filterText.length > 0;
 
   return (
     <>
@@ -46,8 +68,7 @@ const NotesListFilter = ({ notes }: NotesListFilterProps) => {
       </div>
 
       <section>
-        {/* Check if original notes array was empty */}
-        {notes.length === 0 ? (
+        {isInitialEmpty && !isFiltering ? ( // Case 1: No notes ever loaded and no filter applied
           <Card>
             <CardContent className="pt-6">
               <p className="text-center text-muted-foreground">
@@ -55,8 +76,7 @@ const NotesListFilter = ({ notes }: NotesListFilterProps) => {
               </p>
             </CardContent>
           </Card>
-        ) : // Check if filtered notes array is empty when original notes were not
-        filteredNotes.length === 0 ? (
+        ) : isFilteredEmpty && isFiltering ? ( // Case 2: Notes exist, but filter yields no results
           <Card>
             <CardContent className="pt-6">
               <p className="text-center text-muted-foreground">
@@ -65,6 +85,7 @@ const NotesListFilter = ({ notes }: NotesListFilterProps) => {
             </CardContent>
           </Card>
         ) : (
+          // Case 3: Display filtered notes (which might be all notes if no filter)
           <ul className="grid grid-cols-12 gap-4">
             {filteredNotes.map((note) => (
               <li
@@ -85,8 +106,11 @@ const NotesListFilter = ({ notes }: NotesListFilterProps) => {
                     </CardHeader>
                   </Link>
                   <CardFooter className="flex justify-end">
-                    {/* Delete button component */}
-                    <DeleteNoteButton noteId={note._id} />
+                    {/* Pass the handler to DeleteNoteButton */}
+                    <DeleteNoteButton
+                      noteId={note._id}
+                      onNoteDeleted={handleNoteDeleted} // <-- NEW PROP PASSED
+                    />
                   </CardFooter>
                 </Card>
               </li>

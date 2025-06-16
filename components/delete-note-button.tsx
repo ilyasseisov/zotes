@@ -1,3 +1,4 @@
+// delete-note-button.tsx
 "use client";
 
 import { useState } from "react";
@@ -6,7 +7,7 @@ import { Trash2 } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import {
-  AlertDialog, // Using AlertDialog is often better for destructive actions than Dialog
+  AlertDialog,
   AlertDialogAction,
   AlertDialogCancel,
   AlertDialogContent,
@@ -15,17 +16,20 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
   AlertDialogTrigger,
-} from "@/components/ui/alert-dialog"; // Assuming you have AlertDialog set up (part of Shadcn Dialog/AlertDialog)
+} from "@/components/ui/alert-dialog";
 
-import { useToast } from "@/hooks/use-toast"; // Your toast hook
-import { deleteNoteAction } from "@/lib/actions/note.actions"; // Your server action
+import { useToast } from "@/hooks/use-toast";
+import { deleteNoteAction } from "@/lib/actions/note.actions";
 
 interface DeleteNoteButtonProps {
   noteId: string;
+  onNoteDeleted: (deletedNoteId: string) => void; // <-- NEW PROP
 }
 
-const DeleteNoteButton = ({ noteId }: DeleteNoteButtonProps) => {
+const DeleteNoteButton = ({ noteId, onNoteDeleted }: DeleteNoteButtonProps) => {
+  // <-- ACCEPT PROP
   const [isLoading, setIsLoading] = useState(false);
+  const [isDialogOpen, setIsDialogOpen] = useState(false); // For programmatic dialog control
   const router = useRouter();
   const { toast } = useToast();
 
@@ -41,12 +45,17 @@ const DeleteNoteButton = ({ noteId }: DeleteNoteButtonProps) => {
           description: "Note deleted successfully",
           variant: "default",
         });
-        // Revalidate the home page data
+
+        // Optimistic UI update: Call the parent's handler to remove the note
+        onNoteDeleted(noteId); // <-- CALL THE NEW PROP HERE!
+
+        // Close the dialog immediately after successful action and optimistic update
+        setIsDialogOpen(false);
+
+        // router.refresh() is still useful for revalidating server cache for future fetches
+        // but it's not strictly necessary for *immediate* UI update here anymore.
         router.refresh();
-      }
-      // Although deleteNoteAction throws on failure, adding a check here
-      // is good practice if the action's return type ever changes.
-      else {
+      } else {
         toast({
           title: "Error",
           description: "Failed to delete note.",
@@ -62,15 +71,15 @@ const DeleteNoteButton = ({ noteId }: DeleteNoteButtonProps) => {
       });
     } finally {
       setIsLoading(false);
-      // The AlertDialog should close automatically on action click,
-      // but you could add state here if needed for programmatic close.
+      // Dialog is closed by setIsDialogOpen(false) on success
     }
   };
 
   return (
-    <AlertDialog>
+    // Pass isDialogOpen and setIsDialogOpen to AlertDialog
+    <AlertDialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
       <AlertDialogTrigger asChild>
-        {/* The button that opens the dialog */}
+        {/* Disable the button while an action is pending */}
         <Button variant="ghost" size="icon" disabled={isLoading}>
           <Trash2 className="h-4 w-4" />
           <span className="sr-only">Delete note</span>
@@ -85,7 +94,8 @@ const DeleteNoteButton = ({ noteId }: DeleteNoteButtonProps) => {
           </AlertDialogDescription>
         </AlertDialogHeader>
         <AlertDialogFooter>
-          <AlertDialogCancel>Cancel</AlertDialogCancel>
+          <AlertDialogCancel disabled={isLoading}>Cancel</AlertDialogCancel>{" "}
+          {/* Disable cancel while deletion is in progress */}
           <AlertDialogAction
             onClick={handleDelete}
             disabled={isLoading}
