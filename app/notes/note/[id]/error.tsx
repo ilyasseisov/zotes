@@ -13,6 +13,7 @@ import {
 } from "@/components/ui/card"; // Assuming shadcn Card components
 import { AlertCircle } from "lucide-react"; // Assuming lucide-react for icons
 import Link from "next/link"; // For the "Go Home" link
+import ROUTES from "@/constants/routes";
 
 export default function Error({
   error,
@@ -73,7 +74,7 @@ export default function Error({
           </Button>
           {/* Button to go back home */}
           <Button variant="outline" asChild>
-            <Link href="/">Go Home</Link>
+            <Link href={ROUTES.APP}>Go Home</Link>
           </Button>
         </CardFooter>
       </Card>
