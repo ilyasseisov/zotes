@@ -51,6 +51,14 @@ export default function Page() {
                       </Clerk.Loading>
                     </Button>
                   </Clerk.Connection>
+
+                  <div className="text-center">
+                    <Button variant="link" size="sm" asChild>
+                      <Clerk.Link navigate="sign-up" className="text-secondary">
+                        Don&apos;t have an account? Sign up
+                      </Clerk.Link>
+                    </Button>
+                  </div>
                 </CardContent>
               </Card>
             </SignIn.Step>
