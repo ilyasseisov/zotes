@@ -1,5 +1,6 @@
 "use client";
 
+import * as React from "react"; // Import React for useState
 import * as Clerk from "@clerk/elements/common";
 import * as SignUp from "@clerk/elements/sign-up";
 import { Button } from "@/components/ui/button";
@@ -22,14 +23,17 @@ export default function Page() {
   // Use the useSignUp hook to programmatically handle signup
   const { isLoaded, signUp } = useSignUp();
 
+  // State to manage loading for the Google button
+  const [isGoogleLoading, setIsGoogleLoading] = React.useState(false);
+
   // Construct the dynamic redirect URL for Google login
-  // This URL will include your 'plan' parameter.
-  // Clerk will redirect to this URL after successful Google authentication.
   const dynamicRedirectUrl = `${window.location.origin}/api/auth/after-signup?plan=${plan}`;
 
   // Handle Google sign-up via authenticateWithRedirect
   const handleGoogleSignUp = async () => {
-    if (!isLoaded) return; // Ensure the signUp object is loaded
+    if (!isLoaded || isGoogleLoading) return; // Prevent multiple clicks or if SDK not loaded
+
+    setIsGoogleLoading(true); // Set loading state to true
 
     try {
       await signUp.authenticateWithRedirect({
@@ -41,18 +45,17 @@ export default function Page() {
         },
       });
       // Clerk will now handle the redirect to Google, and then back to dynamicRedirectUrl
+      // The loading state will automatically reset as the page unmounts/redirects
     } catch (error) {
       console.error("Google sign-up failed:", error);
-      // You can add a user-facing error message here
+      setIsGoogleLoading(false); // Reset loading state on error
+      // You can add a user-facing error message here (e.g., using a toast)
     }
   };
 
   return (
     <div className="flex min-h-screen items-center justify-center overflow-hidden bg-background">
-      <SignUp.Root
-      // forceRedirectUrl and unsafeMetadata are NOT props on SignUp.Root from @clerk/elements.
-      // We're handling them programmatically with useSignUp.
-      >
+      <SignUp.Root>
         <Clerk.Loading>
           {(isGlobalLoading) => (
             <SignUp.Step name="start">
@@ -66,21 +69,16 @@ export default function Page() {
                   </CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-4">
-                  {/* Replaced Clerk.Connection with a standard Button and custom onClick */}
                   <Button
                     variant="outline"
                     type="button"
-                    disabled={isGlobalLoading || !isLoaded} // Disable if Clerk SDK not loaded
+                    // Disable if Clerk SDK not loaded, or if Google button is already loading
+                    disabled={isGlobalLoading || !isLoaded || isGoogleLoading}
                     className="w-full"
                     size="lg"
                     onClick={handleGoogleSignUp} // Call our custom handler
                   >
-                    {/* Clerk.Loading for provider scope might not work directly here
-                        since we're controlling the action manually.
-                        You might need to manage loading state manually or use a
-                        generic global loading indicator for the button.
-                        For simplicity, using global loading here. */}
-                    {isGlobalLoading ? (
+                    {isGoogleLoading ? ( // Conditionally render based on isGoogleLoading
                       <Icons.spinner className="mr-2 h-5 w-5 animate-spin" />
                     ) : (
                       <>

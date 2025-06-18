@@ -1,7 +1,8 @@
 "use client";
 
+import * as React from "react"; // Import React for useState
 import * as Clerk from "@clerk/elements/common";
-import * as SignIn from "@clerk/elements/sign-in";
+import * as SignIn from "@clerk/elements/sign-in"; // Corrected import for SignIn elements
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -11,8 +12,43 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Icons } from "@/components/ui/icons";
+import { useSignIn } from "@clerk/nextjs"; // Import the useSignIn hook
 
 export default function Page() {
+  // Use the useSignIn hook to programmatically handle sign-in
+  const { isLoaded, signIn } = useSignIn();
+
+  // State to manage loading for the Google button
+  const [isGoogleLoading, setIsGoogleLoading] = React.useState(false);
+
+  // Construct the dynamic redirect URL for Google login after sign-in.
+  // For sign-in, you typically redirect to a dashboard or a more generic path.
+  // Clerk will often append 'redirect_url' from the original page the user was on.
+  const dynamicRedirectUrl = `${window.location.origin}/notes`;
+
+  // Handle Google sign-in via authenticateWithRedirect
+  const handleGoogleSignIn = async () => {
+    if (!isLoaded || isGoogleLoading) return; // Prevent multiple clicks or if SDK not loaded
+
+    setIsGoogleLoading(true); // Set loading state to true
+
+    try {
+      await signIn.authenticateWithRedirect({
+        strategy: "oauth_google", // Specify the Google OAuth strategy
+        redirectUrl: dynamicRedirectUrl, // Dynamic redirect URL after successful sign-in
+        redirectUrlComplete: dynamicRedirectUrl, // This is often the same for simplicity
+        // For sign-in, unsafeMetadata is less common unless you're passing session-specific data.
+        // It's usually associated with the sign-up process.
+      });
+      // Clerk will now handle the redirect to Google, and then back to dynamicRedirectUrl
+      // The loading state will automatically reset as the page unmounts/redirects
+    } catch (error) {
+      console.error("Google sign-in failed:", error);
+      setIsGoogleLoading(false); // Reset loading state on error
+      // You can add a user-facing error message here (e.g., using a toast)
+    }
+  };
+
   return (
     <div className="fixed inset-0 flex items-center justify-center overflow-hidden bg-background">
       <SignIn.Root>
@@ -29,28 +65,25 @@ export default function Page() {
                   </CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-4">
-                  <Clerk.Connection name="google" asChild>
-                    <Button
-                      variant="outline"
-                      type="button"
-                      disabled={isGlobalLoading}
-                      className="w-full"
-                      size="lg"
-                    >
-                      <Clerk.Loading scope="provider:google">
-                        {(isLoading) =>
-                          isLoading ? (
-                            <Icons.spinner className="mr-2 h-5 w-5 animate-spin" />
-                          ) : (
-                            <>
-                              <Icons.google className="mr-2 h-5 w-5" />
-                              Continue with Google
-                            </>
-                          )
-                        }
-                      </Clerk.Loading>
-                    </Button>
-                  </Clerk.Connection>
+                  {/* Replaced Clerk.Connection with a standard Button and custom onClick */}
+                  <Button
+                    variant="outline"
+                    type="button"
+                    // Disable if Clerk SDK not loaded, or if Google button is already loading
+                    disabled={isGlobalLoading || !isLoaded || isGoogleLoading}
+                    className="w-full"
+                    size="lg"
+                    onClick={handleGoogleSignIn} // Call our custom handler
+                  >
+                    {isGoogleLoading ? ( // Conditionally render based on isGoogleLoading
+                      <Icons.spinner className="mr-2 h-5 w-5 animate-spin" />
+                    ) : (
+                      <>
+                        <Icons.google className="mr-2 h-5 w-5" />
+                        Continue with Google
+                      </>
+                    )}
+                  </Button>
 
                   <div className="text-center">
                     <Button variant="link" size="sm" asChild>
