@@ -43,6 +43,7 @@ export function HeroSection() {
           <div className="relative mx-auto max-w-4xl">
             <div className="relative overflow-hidden rounded-xl shadow-2xl">
               <Image
+                quality={100}
                 width={1000}
                 height={595}
                 src={IMAGES.SCREENSHOT}
