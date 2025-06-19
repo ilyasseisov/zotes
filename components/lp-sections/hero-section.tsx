@@ -2,6 +2,7 @@ import { Button } from "@/components/ui/button";
 import IMAGES from "@/constants/images";
 import { ArrowRight, PenTool } from "lucide-react";
 import Image from "next/image";
+import Link from "next/link";
 
 export function HeroSection() {
   return (
@@ -30,9 +31,11 @@ export function HeroSection() {
 
           {/* CTA Buttons */}
           <div className="mb-12 flex flex-col gap-4 sm:flex-row sm:justify-center">
-            <Button size="lg" className="px-8 py-6 text-lg">
-              Start Free
-              <ArrowRight className="ml-2 h-5 w-5" />
+            <Button asChild size="lg" className="px-8 py-6 text-lg">
+              <Link href="#pricing">
+                <span className="text-nowrap">Start Free</span>
+                <ArrowRight className="ml-2 h-5 w-5" />
+              </Link>
             </Button>
           </div>
 

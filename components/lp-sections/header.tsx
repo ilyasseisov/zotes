@@ -24,8 +24,10 @@ export function Header() {
           </div>
           {/* Right side - Theme toggle and CTA */}
           <div className="flex items-center gap-4">
-            <Button size="sm" className="font-medium">
-              Start Free
+            <Button asChild size="sm" className="font-medium">
+              <Link href="#pricing">
+                <span className="text-nowrap">Start Free</span>
+              </Link>
             </Button>
           </div>
         </div>

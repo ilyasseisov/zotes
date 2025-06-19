@@ -24,7 +24,7 @@ export default function Pricing() {
   };
 
   return (
-    <div className="container mx-auto px-4 py-12">
+    <div id="pricing" className="container mx-auto px-4 py-12">
       <div className="mb-10 text-center">
         <h2 className="text-3xl font-bold tracking-tight sm:text-4xl">
           Simple and transparent pricing
@@ -53,7 +53,7 @@ export default function Pricing() {
             <ul className="space-y-3">
               <li className="flex items-center">
                 <Check className="mr-3 h-5 w-5 flex-shrink-0 text-green-500" />
-                <span>Up to 10 notes</span>
+                <span>Up to 3 notes</span>
               </li>
               <li className="flex items-center">
                 <span>&nbsp;</span>
