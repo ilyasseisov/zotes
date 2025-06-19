@@ -97,7 +97,10 @@ const NotesListFilter = ({ notes: initialNotes }: NotesListFilterProps) => {
                   <Link href={ROUTES.SINGLE_NOTE(note._id)}>
                     <CardHeader>
                       {/* Display the full title */}
-                      <CardTitle>{note.title}</CardTitle>
+                      <CardTitle>
+                        {note.title.slice(0, 28)}
+                        {note.title.length > 28 ? "..." : ""}
+                      </CardTitle>
                       {/* Display a truncated version of the content */}
                       <CardDescription>
                         {note.content.slice(0, 28)}

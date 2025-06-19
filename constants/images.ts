@@ -1,5 +1,5 @@
 const IMAGES = {
-  // HOME: '/images/home.jpg',
+  SCREENSHOT: "/images/screenshot.png",
   // ABOUT: '/images/about.jpg',
 };
 
