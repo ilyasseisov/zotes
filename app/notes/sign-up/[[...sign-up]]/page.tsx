@@ -25,9 +25,16 @@ export default function Page() {
 
   // State to manage loading for the Google button
   const [isGoogleLoading, setIsGoogleLoading] = React.useState(false);
+  const [redirectUrl, setRedirectUrl] = React.useState(
+    "/api/auth/after-signup?plan=" + plan,
+  );
 
-  // Construct the dynamic redirect URL for Google login
-  const dynamicRedirectUrl = `${window.location.origin}/api/auth/after-signup?plan=${plan}`;
+  // Set up the redirect URL on the client side
+  React.useEffect(() => {
+    setRedirectUrl(
+      `${window.location.origin}/api/auth/after-signup?plan=${plan}`,
+    );
+  }, [plan]);
 
   // Handle Google sign-up via authenticateWithRedirect
   const handleGoogleSignUp = async () => {
@@ -38,8 +45,8 @@ export default function Page() {
     try {
       await signUp.authenticateWithRedirect({
         strategy: "oauth_google", // Specify the Google OAuth strategy
-        redirectUrl: dynamicRedirectUrl, // Dynamic redirect URL with plan param
-        redirectUrlComplete: dynamicRedirectUrl, // This is often the same for simplicity
+        redirectUrl, // Dynamic redirect URL with plan param
+        redirectUrlComplete: redirectUrl, // This is often the same for simplicity
         unsafeMetadata: {
           selectedPlan: plan, // Pass your dynamic plan here as unsafeMetadata
         },

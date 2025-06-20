@@ -21,10 +21,13 @@ export default function Page() {
   // State to manage loading for the Google button
   const [isGoogleLoading, setIsGoogleLoading] = React.useState(false);
 
-  // Construct the dynamic redirect URL for Google login after sign-in.
-  // For sign-in, you typically redirect to a dashboard or a more generic path.
-  // Clerk will often append 'redirect_url' from the original page the user was on.
-  const dynamicRedirectUrl = `${window.location.origin}/notes`;
+  // State to manage the redirect URL
+  const [redirectUrl, setRedirectUrl] = React.useState("/notes");
+
+  // Set up the redirect URL on the client side
+  React.useEffect(() => {
+    setRedirectUrl(`${window.location.origin}/notes`);
+  }, []);
 
   // Handle Google sign-in via authenticateWithRedirect
   const handleGoogleSignIn = async () => {
@@ -35,10 +38,8 @@ export default function Page() {
     try {
       await signIn.authenticateWithRedirect({
         strategy: "oauth_google", // Specify the Google OAuth strategy
-        redirectUrl: dynamicRedirectUrl, // Dynamic redirect URL after successful sign-in
-        redirectUrlComplete: dynamicRedirectUrl, // This is often the same for simplicity
-        // For sign-in, unsafeMetadata is less common unless you're passing session-specific data.
-        // It's usually associated with the sign-up process.
+        redirectUrl, // Dynamic redirect URL after successful sign-in
+        redirectUrlComplete: redirectUrl, // This is often the same for simplicity
       });
       // Clerk will now handle the redirect to Google, and then back to dynamicRedirectUrl
       // The loading state will automatically reset as the page unmounts/redirects
