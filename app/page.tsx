@@ -11,7 +11,7 @@ export default async function Home() {
   // return
   return (
     <>
-      <main className="container mx-auto max-w-5xl px-4 py-8 text-center">
+      <main className="container mx-auto max-w-5xl px-4 py-9 text-center">
         <Header />
         <HeroSection />
         <KeyBenefitsSection />
