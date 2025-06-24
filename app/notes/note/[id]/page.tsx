@@ -1,24 +1,14 @@
-// notes/note/[id]/page.tsx
 import { Button } from "@/components/ui/button";
 import UpdateNoteFormWrapper from "@/components/update-note-form-wrapper";
 import ROUTES from "@/constants/routes";
 import { getSingleNoteAction } from "@/lib/actions/note.actions";
 import Link from "next/link";
-import { notFound } from "next/navigation"; // Import notFound
+import { notFound } from "next/navigation";
 
-// The Note interface is now expected to be globally available from global.d.ts
-// If it's not, ensure global.d.ts is correctly set up or import it here.
-
-// Define the expected props for the Page component
-interface NotePageProps {
-  params: {
-    id: string;
-  };
-}
-
-const Page = async ({ params }: NotePageProps) => {
-  // 'params' is already an object, no need to await it.
-  const { id } = params;
+// Updated component signature for Next.js 15
+const Page = async ({ params }: { params: Promise<{ id: string }> }) => {
+  // Await the params to get the actual values
+  const { id } = await params;
 
   let note: Note; // Declare the note variable, now using the global Note interface
 
@@ -82,4 +72,5 @@ const Page = async ({ params }: NotePageProps) => {
     </>
   );
 };
+
 export default Page;

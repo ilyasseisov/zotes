@@ -81,7 +81,6 @@ const UpdateNoteFormWrapper = ({ note }: UpdateNoteFormWrapperProps) => {
       content={note.content}
       onSubmit={handleNoteUpdate} // Pass the client-side async handler
       btnTitle="Update"
-      showCancelButton={false}
     />
   );
 };
