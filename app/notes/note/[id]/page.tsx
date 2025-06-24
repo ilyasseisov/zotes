@@ -6,9 +6,21 @@ import { getSingleNoteAction } from "@/lib/actions/note.actions";
 import Link from "next/link";
 import { notFound } from "next/navigation"; // Import notFound
 
-const Page = async ({ params }: { params: { id: string } }) => {
-  const { id } = await params;
-  let note: Note; // Declare the note variable
+// The Note interface is now expected to be globally available from global.d.ts
+// If it's not, ensure global.d.ts is correctly set up or import it here.
+
+// Define the expected props for the Page component
+interface NotePageProps {
+  params: {
+    id: string;
+  };
+}
+
+const Page = async ({ params }: NotePageProps) => {
+  // 'params' is already an object, no need to await it.
+  const { id } = params;
+
+  let note: Note; // Declare the note variable, now using the global Note interface
 
   try {
     const result = await getSingleNoteAction(id); // Get the full result, which might be a Note or an error object
