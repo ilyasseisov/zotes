@@ -19,9 +19,14 @@ export default function FooterSection() {
         </Link>
 
         <span className="block text-center text-sm text-muted-foreground">
-          {" "}
           © {new Date().getFullYear()} Zotes., All rights reserved
         </span>
+        <Link
+          href="/privacy-policy"
+          className="mt-2 block text-center text-xs text-muted-foreground underline transition-colors hover:text-primary"
+        >
+          Privacy Policy
+        </Link>
       </div>
     </footer>
   );
